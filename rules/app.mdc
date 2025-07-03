@@ -1,0 +1,18 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+I'm making a website for a live vision language model. Users can hook up their webcam or external camera and get insights into the live video feed. This leverages external API vision language models, not local models. Users can choose which model. They can also choose the seconds delay per query. 
+
+For now users can enter a query with their image to specify type of information to extract. 
+
+
+
+DO NOT HALLUCINATE
+
+WRITE CLEAN CODE
+
+THINK ABOUT WHAT YOU WRITE
+
+MAKE SURE THE CODE IS STRUCTURED TO BE MAINTAINABLE AND EXPANDABLE FOR FUTURE FEATURES
