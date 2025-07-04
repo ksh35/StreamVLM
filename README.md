@@ -1,6 +1,6 @@
 # StreamVLM
 
-A real-time video analysis app that uses VLMs to analze your webcam feed. Incorporates context from previous frames to current frames to enhance video understanding.
+A real-time video analysis tool that uses VLMs to analyze your webcam feed. Great for easy experimentation. Incorporates context from previous frames to current frames to enhance video understanding.
 
 ## What it does
 
