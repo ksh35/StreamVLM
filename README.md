@@ -15,6 +15,7 @@ StreamVLM captures frames from your camera and leverages VLM models like GPT, Cl
       <td><img width="236" alt="Screenshot 2025-07-03 at 9 18 30 PM" src="https://github.com/user-attachments/assets/b23a49c3-60f8-4c28-ba08-99af9d4cae12" /></td>
   </tr>
 </table>
+Demo video: https://www.youtube.com/watch?v=IJ2VVyzLnzo
 
 
 ## Features
