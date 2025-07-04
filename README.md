@@ -9,9 +9,13 @@ StreamVLM captures frames from your camera and leverages VLM models like GPT, Cl
 - Describe what it sees in each frame
 - Track changes over time using temporal context
 - Generate summaries of longer video sequences
+<table>
+   <tr>
+      <td><img width="700" alt="Screenshot 2025-07-03 at 9 18 12 PM" src="https://github.com/user-attachments/assets/6edf19a5-e3a2-4bfd-adb7-81d22c15b150" /></td>
+      <td><img width="236" alt="Screenshot 2025-07-03 at 9 18 30 PM" src="https://github.com/user-attachments/assets/b23a49c3-60f8-4c28-ba08-99af9d4cae12" /></td>
+  </tr>
+</table>
 
-<img width="700" alt="Screenshot 2025-07-03 at 9 18 12 PM" src="https://github.com/user-attachments/assets/6edf19a5-e3a2-4bfd-adb7-81d22c15b150" />
-<img width="236" alt="Screenshot 2025-07-03 at 9 18 30 PM" src="https://github.com/user-attachments/assets/b23a49c3-60f8-4c28-ba08-99af9d4cae12" />
 
 ## Features
 
