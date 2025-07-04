@@ -4,7 +4,7 @@ A real-time video analysis app that uses VLMs to analze your webcam feed. Incorp
 
 ## What it does
 
-StreamVLM captures frames from your camera and sends them to VLM models like GPT, Claude, and Gemini for analysis. The app can:
+StreamVLM captures frames from your camera and leverages VLM models like GPT, Claude, and Gemini for video understanding. The app can:
 
 - Describe what it sees in each frame
 - Track changes over time using temporal context

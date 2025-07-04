@@ -40,7 +40,7 @@ export const ApiKeyModal: React.FC<{ open: boolean, onClose: () => void }> = ({ 
       <div className="bg-white rounded shadow-lg p-6 w-full max-w-md">
         <h2 className="text-lg font-bold mb-4">Enter API Keys</h2>
         <label className="block mb-2 text-sm">OpenAI API Key {keyStatus.openai && <span className="text-green-600 ml-2">(Set)</span>}</label>
-        <input className="input-field mb-4" value={openai} onChange={e => setOpenai(e.target.value)} placeholder="sk-..." />
+        <input className="input-field mb-4" value={openai} onChange={e => setOpenai(e.target.value)} placeholder="..." />
         <label className="block mb-2 text-sm">Anthropic API Key {keyStatus.anthropic && <span className="text-green-600 ml-2">(Set)</span>}</label>
         <input className="input-field mb-4" value={anthropic} onChange={e => setAnthropic(e.target.value)} placeholder="..." />
         <label className="block mb-2 text-sm">Google API Key {keyStatus.google && <span className="text-green-600 ml-2">(Set)</span>}</label>
