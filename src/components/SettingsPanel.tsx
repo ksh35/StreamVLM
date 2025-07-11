@@ -66,6 +66,19 @@ export const SettingsPanel: React.FC = () => {
   // Filter models for summary (scene summary) selection
   const summaryCapableModels = availableModels.filter((model: VLMModel) => model.supports_text);
 
+  // Add a function to show configured providers
+  const getConfiguredProviders = () => {
+    const savedKeys = sessionStorage.getItem('vlmstream_api_keys');
+    if (savedKeys) {
+      const keys = JSON.parse(savedKeys);
+      return Object.keys(keys).filter(key => keys[key] && keys[key].length > 0);
+    }
+    return [];
+  };
+
+  // Add this to show API key status
+  const configuredProviders = getConfiguredProviders();
+
   return (
     <div className="card">
       <div className="flex items-center gap-2 mb-4">
@@ -294,6 +307,16 @@ export const SettingsPanel: React.FC = () => {
             When enabled, the VLM will consider previous frames to provide more coherent analysis.
           </p>
         </div>
+
+        {/* Configured API Keys */}
+        {configuredProviders.length > 0 && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+            <h3 className="text-sm font-medium text-green-800 mb-1">Configured API Keys</h3>
+            <p className="text-xs text-green-700">
+              {configuredProviders.join(', ')} API keys configured
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

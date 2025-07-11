@@ -15,7 +15,7 @@ export class WebSocketService {
   ) {}
 
   connect(): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return new Promise( (resolve, reject) => {
       try {
         this.ws = new WebSocket(this.url);
 
@@ -113,6 +113,11 @@ export class WebSocketService {
     use_temporal_context?: boolean;
     settings?: any;
     timestamp?: string;
+    api_keys?: {
+      openai?: string;
+      anthropic?: string;
+      google?: string;
+    };
   }): void {
     this.send({
       type: 'vlm_query',
@@ -135,10 +140,12 @@ export class WebSocketService {
   }
 
   getSummary(model?: string, summaryPrompt?: string): void {
+    const apiKeys = this.getApiKeys();
     this.send({
       type: 'get_summary',
       model: model,
       summary_prompt: summaryPrompt,
+      api_keys: apiKeys
     });
   }
 
@@ -148,5 +155,13 @@ export class WebSocketService {
 
   isConnected(): boolean {
     return this.ws?.readyState === WebSocket.OPEN;
+  }
+
+  private getApiKeys(): { openai?: string; anthropic?: string; google?: string } {
+    const savedKeys = localStorage.getItem('vlmstream_api_keys');
+    if (savedKeys) {
+      return JSON.parse(savedKeys);
+    }
+    return {};
   }
 } 

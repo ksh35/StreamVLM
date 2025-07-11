@@ -111,6 +111,14 @@ class VLMServices:
             return False
         return True
     
+    def _validate_api_key_with_keys(self, provider: str, api_keys: Dict[str, str]) -> bool:
+        """Validate if API key is set for provider using provided keys"""
+        api_key = api_keys.get(provider)
+        if not api_key or api_key.startswith("your-"):
+            logger.warning(f"API key not set for {provider}")
+            return False
+        return True
+    
     def start_session(self, session_id: Optional[str] = None) -> str:
         """Start a new analysis session"""
         if session_id is None:
@@ -127,8 +135,6 @@ class VLMServices:
         """Get frame history for a specific session"""
         return self.active_sessions.get(session_id)
     
-
-    
     async def query_model_with_history(
         self, 
         model: str, 
@@ -136,7 +142,8 @@ class VLMServices:
         prompt: str = "What is in this image?",
         settings: Optional[Settings] = None,
         session_id: Optional[str] = None,
-        use_temporal_context: bool = True
+        use_temporal_context: bool = True,
+        user_api_keys: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
         """
         Query a VLM model with simplified temporal context from frame history
@@ -148,6 +155,7 @@ class VLMServices:
             settings: Optional VLM settings
             session_id: Session identifier for frame history
             use_temporal_context: Whether to include temporal context
+            user_api_keys: Optional user-provided API keys
             
         Returns:
             Dictionary with response and temporal context information
@@ -172,9 +180,9 @@ class VLMServices:
             enhanced_prompt = frame_history.enhance_prompt_with_context(prompt)
             temporal_context = frame_history.get_temporal_context()
         
-        # Query the VLM model
+        # Query the VLM model with user API keys
         try:
-            response = await self.query_model(model, image_b64, enhanced_prompt, settings)
+            response = await self.query_model(model, image_b64, enhanced_prompt, settings, user_api_keys)
             processing_time = time.time() - start_time
             
             # Create frame data
@@ -226,7 +234,8 @@ class VLMServices:
         model: str, 
         image_b64: str, 
         prompt: str = "What is in this image?",
-        settings: Optional[Settings] = None
+        settings: Optional[Settings] = None,
+        user_api_keys: Optional[Dict[str, str]] = None
     ) -> str:
         """
         Query a VLM model with an image and prompt
@@ -236,6 +245,7 @@ class VLMServices:
             image_b64: Base64 encoded image
             prompt: Text prompt
             settings: Optional VLM settings
+            user_api_keys: Optional user-provided API keys
             
         Returns:
             Model response as string
@@ -246,8 +256,11 @@ class VLMServices:
         model_info = self.available_models[model]
         provider = model_info["provider"]
         
+        # Use user API keys if provided, otherwise fallback to environment variables
+        api_keys = user_api_keys or self.api_keys
+        
         # Validate API key
-        if not self._validate_api_key(provider):
+        if not self._validate_api_key_with_keys(provider, api_keys):
             raise ValueError(f"API key not configured for {provider}")
         
         # Use default settings if none provided
@@ -256,19 +269,19 @@ class VLMServices:
         
         # Route to appropriate provider
         if provider == "openai":
-            return await self._query_openai(model, image_b64, prompt, settings)
+            return await self._query_openai(model, image_b64, prompt, settings, api_keys["openai"])
         elif provider == "anthropic":
-            return await self._query_anthropic(model, image_b64, prompt, settings)
+            return await self._query_anthropic(model, image_b64, prompt, settings, api_keys["anthropic"])
         elif provider == "google":
-            return await self._query_google(model, image_b64, prompt, settings)
+            return await self._query_google(model, image_b64, prompt, settings, api_keys["google"])
         else:
             raise ValueError(f"Provider {provider} not implemented")
     
-    async def _query_openai(self, model: str, image_b64: str, prompt: str, settings: Settings) -> str:
+    async def _query_openai(self, model: str, image_b64: str, prompt: str, settings: Settings, api_key: str) -> str:
         """Query OpenAI VLM models"""
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.api_keys['openai']}"
+            "Authorization": f"Bearer {api_key}"
         }
         
         payload = {
@@ -310,11 +323,11 @@ class VLMServices:
             logger.error(f"OpenAI API error: {e}")
             raise Exception(f"OpenAI API error: {e}")
     
-    async def _query_anthropic(self, model: str, image_b64: str, prompt: str, settings: Settings) -> str:
+    async def _query_anthropic(self, model: str, image_b64: str, prompt: str, settings: Settings, api_key: str) -> str:
         """Query Anthropic VLM models"""
         headers = {
             "Content-Type": "application/json",
-            "x-api-key": self.api_keys['anthropic'],
+            "x-api-key": api_key,
             "anthropic-version": "2023-06-01"
         }
         
@@ -359,7 +372,7 @@ class VLMServices:
             logger.error(f"Anthropic API error: {e}")
             raise Exception(f"Anthropic API error: {e}")
     
-    async def _query_google(self, model: str, image_b64: str, prompt: str, settings: Settings) -> str:
+    async def _query_google(self, model: str, image_b64: str, prompt: str, settings: Settings, api_key: str) -> str:
         """Query Google VLM models"""
         headers = {
             "Content-Type": "application/json"
@@ -389,7 +402,7 @@ class VLMServices:
         
         try:
             response = requests.post(
-                f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={self.api_keys['google']}",
+                f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}",
                 headers=headers,
                 json=payload,
                 timeout=30
@@ -474,7 +487,13 @@ class VLMServices:
         """Get current summary window size"""
         return self.summary_window
     
-    async def get_general_summary(self, session_id: Optional[str] = None, model: Optional[str] = None, summary_prompt: Optional[str] = None) -> str:
+    async def get_general_summary(
+        self, 
+        session_id: Optional[str] = None, 
+        model: Optional[str] = None, 
+        summary_prompt: Optional[str] = None,
+        user_api_keys: Optional[Dict[str, str]] = None
+    ) -> str:
         """
         Get general summary from frame history
         
@@ -482,6 +501,7 @@ class VLMServices:
             session_id: Optional session ID. If None, uses default session
             model: Optional specific model to use for summary generation
             summary_prompt: Optional custom summary prompt to use
+            user_api_keys: Optional user-provided API keys
             
         Returns:
             General summary of recent frames
@@ -502,9 +522,20 @@ class VLMServices:
             return "No session data available for summary. Please start a session and process some frames first."
             
         logger.info(f"Frame history has {len(frame_history.frame_history)} frames")
-        return await frame_history.get_general_summary(force_update=True, model=model, summary_prompt=summary_prompt)
+        return await frame_history.get_general_summary(
+            force_update=True, 
+            model=model, 
+            summary_prompt=summary_prompt,
+            user_api_keys=user_api_keys
+        )
     
-    async def generate_scene_summary(self, frame_responses: List[str], model: Optional[str] = None, summary_prompt: Optional[str] = None) -> str:
+    async def generate_scene_summary(
+        self, 
+        frame_responses: List[str], 
+        model: Optional[str] = None, 
+        summary_prompt: Optional[str] = None,
+        user_api_keys: Optional[Dict[str, str]] = None
+    ) -> str:
         """
         Generate intelligent scene summary using LLM analysis
         """
@@ -521,7 +552,8 @@ class VLMServices:
                     summary = await self._query_text_only(
                         model=model,
                         prompt=prompt,
-                        settings=Settings(max_tokens=300, temperature=0.3)
+                        settings=Settings(max_tokens=300, temperature=0.3),
+                        user_api_keys=user_api_keys
                     )
                     logger.info(f"Successfully generated summary using model {model}")
                     return summary.strip()
@@ -536,7 +568,8 @@ class VLMServices:
                     summary = await self._query_text_only(
                         model=fallback_model,
                         prompt=prompt,
-                        settings=Settings(max_tokens=300, temperature=0.3)
+                        settings=Settings(max_tokens=300, temperature=0.3),
+                        user_api_keys=user_api_keys
                     )
                     return summary.strip()
                 except Exception as e:
@@ -578,7 +611,13 @@ What story does this video tell? What actually happened?
         summary = summary[:-1]
         return summary
     
-    async def _query_text_only(self, model: str, prompt: str, settings: Settings) -> str:
+    async def _query_text_only(
+        self, 
+        model: str, 
+        prompt: str, 
+        settings: Settings,
+        user_api_keys: Optional[Dict[str, str]] = None
+    ) -> str:
         """
         Query LLM with text-only prompt (no image)
         
@@ -586,6 +625,7 @@ What story does this video tell? What actually happened?
             model: Model identifier
             prompt: Text prompt
             settings: VLM settings
+            user_api_keys: Optional user-provided API keys
             
         Returns:
             Model response as string
@@ -596,25 +636,28 @@ What story does this video tell? What actually happened?
         model_info = self.available_models[model]
         provider = model_info["provider"]
         
+        # Use user API keys if provided, otherwise fallback to environment variables
+        api_keys = user_api_keys or self.api_keys
+        
         # Validate API key
-        if not self._validate_api_key(provider):
+        if not self._validate_api_key_with_keys(provider, api_keys):
             raise ValueError(f"API key not configured for {provider}")
         
         # Route to appropriate provider for text-only query
         if provider == "openai":
-            return await self._query_openai_text_only(model, prompt, settings)
+            return await self._query_openai_text_only(model, prompt, settings, api_keys["openai"])
         elif provider == "anthropic":
-            return await self._query_anthropic_text_only(model, prompt, settings)
+            return await self._query_anthropic_text_only(model, prompt, settings, api_keys["anthropic"])
         elif provider == "google":
-            return await self._query_google_text_only(model, prompt, settings)
+            return await self._query_google_text_only(model, prompt, settings, api_keys["google"])
         else:
             raise ValueError(f"Provider {provider} not implemented for text-only queries")
     
-    async def _query_openai_text_only(self, model: str, prompt: str, settings: Settings) -> str:
+    async def _query_openai_text_only(self, model: str, prompt: str, settings: Settings, api_key: str) -> str:
         """Query OpenAI with text-only prompt"""
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.api_keys['openai']}"
+            "Authorization": f"Bearer {api_key}"
         }
         
         payload = {
@@ -645,11 +688,11 @@ What story does this video tell? What actually happened?
             logger.error(f"OpenAI API error: {e}")
             raise Exception(f"OpenAI API error: {e}")
     
-    async def _query_anthropic_text_only(self, model: str, prompt: str, settings: Settings) -> str:
+    async def _query_anthropic_text_only(self, model: str, prompt: str, settings: Settings, api_key: str) -> str:
         """Query Anthropic with text-only prompt"""
         headers = {
             "Content-Type": "application/json",
-            "x-api-key": self.api_keys['anthropic'],
+            "x-api-key": api_key,
             "anthropic-version": "2023-06-01"
         }
         
@@ -681,7 +724,7 @@ What story does this video tell? What actually happened?
             logger.error(f"Anthropic API error: {e}")
             raise Exception(f"Anthropic API error: {e}")
     
-    async def _query_google_text_only(self, model: str, prompt: str, settings: Settings) -> str:
+    async def _query_google_text_only(self, model: str, prompt: str, settings: Settings, api_key: str) -> str:
         """Query Google with text-only prompt"""
         headers = {
             "Content-Type": "application/json"
@@ -705,7 +748,7 @@ What story does this video tell? What actually happened?
         
         try:
             response = requests.post(
-                f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={self.api_keys['google']}",
+                f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}",
                 headers=headers,
                 json=payload,
                 timeout=30

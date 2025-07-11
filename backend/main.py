@@ -369,13 +369,17 @@ async def websocket_endpoint(websocket: WebSocket):
                     if settings_dict:
                         settings = Settings(**settings_dict)
                     
+                    # Get user API keys from message
+                    user_api_keys = message.get("api_keys", {})
+                    
                     result = await vlm_services.query_model_with_history(
                         model=message.get("model", "gpt-4o"),
                         image_b64=message.get("image_b64"),
                         prompt=message.get("prompt", "What is in this image?"),
-                        settings=settings,  # Now it's a Settings object, not a dict
+                        settings=settings,
                         session_id=message.get("session_id"),
-                        use_temporal_context=message.get("use_temporal_context", True)
+                        use_temporal_context=message.get("use_temporal_context", True),
+                        user_api_keys=user_api_keys  # Pass user API keys
                     )
                     
                     session_id = result["session_id"]
@@ -519,7 +523,14 @@ async def websocket_endpoint(websocket: WebSocket):
                 try:
                     model = message.get("model")  # Get model from message
                     summary_prompt = message.get("summary_prompt")
-                    summary = await vlm_services.get_general_summary(session_id, model=model, summary_prompt=summary_prompt)
+                    user_api_keys = message.get("api_keys", {})  # Add this line
+                    
+                    summary = await vlm_services.get_general_summary(
+                        session_id, 
+                        model=model, 
+                        summary_prompt=summary_prompt,
+                        user_api_keys=user_api_keys  # Add this parameter
+                    )
                     await manager.send_personal_message(
                         json.dumps({
                             "type": "summary_response",

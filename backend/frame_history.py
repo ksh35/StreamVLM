@@ -175,7 +175,13 @@ class FrameHistoryManager:
         self.cached_summary = None
         logger.info("Frame history cleared")
     
-    async def get_general_summary(self, force_update: bool = False, model: Optional[str] = None, summary_prompt: Optional[str] = None) -> str:
+    async def get_general_summary(
+        self, 
+        force_update: bool = False, 
+        model: Optional[str] = None, 
+        summary_prompt: Optional[str] = None,
+        user_api_keys: Optional[Dict[str, str]] = None
+    ) -> str:
         """Generate a summary of what happened in recent frames using LLM"""
         if not self.frame_history:
             return "No video frames have been processed yet. Start the camera and begin analysis to generate a summary."
@@ -185,9 +191,15 @@ class FrameHistoryManager:
             return "No recent frames available for summary. Try processing more video frames first."
         frame_responses = [f.response for f in recent_frames]
         # Call the LLM-powered summary
-        return await self._generate_llm_summary(frame_responses, model, summary_prompt)
+        return await self._generate_llm_summary(frame_responses, model, summary_prompt, user_api_keys)
     
-    async def _generate_llm_summary(self, frame_responses: List[str], model: Optional[str] = None, summary_prompt: Optional[str] = None) -> str:
+    async def _generate_llm_summary(
+        self, 
+        frame_responses: List[str], 
+        model: Optional[str] = None, 
+        summary_prompt: Optional[str] = None,
+        user_api_keys: Optional[Dict[str, str]] = None
+    ) -> str:
         """Generate a summary of recent frames using LLM"""
         try:
             # Import VLM service for LLM analysis
@@ -197,7 +209,12 @@ class FrameHistoryManager:
             vlm_service = VLMServices(context_window=10, summary_window=10)
             
             # Generate LLM-powered summary
-            summary = await vlm_service.generate_scene_summary(frame_responses, model, summary_prompt)
+            summary = await vlm_service.generate_scene_summary(
+                frame_responses, 
+                model=model, 
+                summary_prompt=summary_prompt,
+                user_api_keys=user_api_keys
+            )
             
             return summary
             

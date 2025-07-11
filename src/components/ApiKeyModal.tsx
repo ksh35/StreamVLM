@@ -15,6 +15,16 @@ export const ApiKeyModal: React.FC<{ open: boolean, onClose: () => void }> = ({ 
     }
   }, [open]);
 
+  useEffect(() => {
+    const savedKeys = localStorage.getItem('vlmstream_api_keys');
+    if (savedKeys) {
+      const keys = JSON.parse(savedKeys);
+      setOpenai(keys.openai || '');
+      setAnthropic(keys.anthropic || '');
+      setGoogle(keys.google || '');
+    }
+  }, []);
+
   const handleSave = async () => {
     setStatus('Saving...');
     const res = await fetch('/api/save-keys', {
@@ -34,6 +44,12 @@ export const ApiKeyModal: React.FC<{ open: boolean, onClose: () => void }> = ({ 
     }
   };
 
+  const saveApiKeys = () => {
+    const keys = { openai, anthropic, google };
+    localStorage.setItem('vlmstream_api_keys', JSON.stringify(keys));
+    onClose();
+  };
+
   if (!open) return null;
   return (
     <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
@@ -46,7 +62,12 @@ export const ApiKeyModal: React.FC<{ open: boolean, onClose: () => void }> = ({ 
         <label className="block mb-2 text-sm">Google API Key {keyStatus.google && <span className="text-green-600 ml-2">(Set)</span>}</label>
         <input className="input-field mb-4" value={google} onChange={e => setGoogle(e.target.value)} placeholder="..." />
         <div className="flex gap-2 mt-4">
-          <button className="btn-primary" onClick={handleSave}>Save</button>
+          <button 
+            onClick={saveApiKeys}
+            className="bg-primary-500 text-white px-4 py-2 rounded hover:bg-primary-600"
+          >
+            Save Keys
+          </button>
           <button className="btn-secondary" onClick={onClose}>Cancel</button>
         </div>
         {status && <div className="mt-2 text-xs text-gray-500">{status}</div>}

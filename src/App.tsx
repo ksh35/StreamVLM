@@ -141,6 +141,13 @@ function App() {
           if (frameData) {
             setProcessingStatus(true);
             console.log('Querying VLM');
+            const getApiKeys = () => {
+              const savedKeys = localStorage.getItem('vlmstream_api_keys');
+              if (savedKeys) {
+                return JSON.parse(savedKeys);
+              }
+              return {};
+            };
             wsRef.current.queryVLM({
               model: settings.selectedModel,
               image_b64: frameData,
@@ -153,6 +160,7 @@ function App() {
                 delay_seconds: settings.delaySeconds,
               },
               timestamp: new Date().toISOString(),
+              api_keys: getApiKeys(),
             });
           }
         }
