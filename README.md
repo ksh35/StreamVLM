@@ -129,18 +129,23 @@ WebSocket endpoint:
 ### Adding New VLM Providers
 
 To add support for a new VLM provider:
-
 1. Add the provider and its models to VLMServices.__init__()
-    - Add your provider’s API key to self.api_keys.
-    - Add your model(s) to self.available_models with the correct provider name, description, and capabilities (e.g., "supports_images", "supports_text").
+   - Add your provider's API key to self.api_keys
+   - Add your model(s) to self.available_models with the correct provider name, description, and capabilities
 2. Implement the query method(s) in VLMServices
-    - Add a method like _query_<provider> for image+prompt queries.
-    - If your provider supports text-only summaries, also add _query_<provider>_text_only.
+   - Add a method like _query_<provider> for image+prompt queries
+   - If your provider supports text-only summaries, also add _query_<provider>_text_only
 3. Update the main query router in VLMServices
-    - In query_model, add a branch for your provider to call your new method.
-    - In _query_text_only, add a branch for your provider if it supports text-only queries.
+   - In query_model, add a branch for your provider to call your new method
+   - In _query_text_only, add a branch for your provider if it supports text-only queries
 4. Update API key validation logic
-    - Make sure your provider is included in self.api_keys and _validate_api_key.
+   - Make sure your provider is included in self.api_keys and _validate_api_key
+5. Update the API key saving endpoint in backend/main.py
+   - Add new parameter to save_api_keys function
+   - Add logic to save and update the new provider's API key
+6. Update frontend components
+   - Add input field in ApiKeyModal.tsx
+   - Update SettingsPanel.tsx to show the new provider in configured providers
 
 Feel free to open a PR to include more models.
 
@@ -151,4 +156,3 @@ Feel free to open a PR to include more models.
 3. Make your changes
 4. Add tests if applicable
 5. Submit a pull request
-
